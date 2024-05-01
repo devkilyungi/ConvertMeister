@@ -8,11 +8,22 @@
 import SwiftUI
 
 struct ConversionTypePicker: View {
+    
+    @Binding var selectedConversionType: ConversionType
+    
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        
+        Picker("Conversion Type:", selection: $selectedConversionType) {
+            ForEach(ConversionType.allCases, id: \.self) {
+                Text($0.rawValue)
+            }
+        }
+        .pickerStyle(.menu)
     }
 }
 
 #Preview {
-    ConversionTypePicker()
+    ConversionTypePicker(
+        selectedConversionType: .constant(ConversionType.length))
+    
 }
