@@ -36,8 +36,14 @@ The most challenging part, which I eventually abandoned, was trying to use one b
 
 **Demo Images and Video:**
 
-🎥 - [Demo Video](./assets/demo_video.mov)
+https://github.com/devkilyungi/ConvertMeister/assets/99484519/ec404e1c-45ce-40f7-b40e-e9f39a273cb9
 
-📸 - [Demo Images: Light theme](./assets/home_light.png)
+<div style="flex: 1; text-align: center;">
+  <p>Home Screen</p>
+  <img src="./assets/home_light.png" alt="Home Screen" width="300">
+</div>
 
-📸 - [Demo Images: Dark theme](./assets/home_dark.png)
+<div style="flex: 1; text-align: center;">
+  <p>Home Screen</p>
+  <img src="./assets/home_dark.png" alt="Home Screen" width="300">
+</div>
