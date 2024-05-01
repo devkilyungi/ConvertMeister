@@ -95,8 +95,14 @@ struct ContentView: View {
             .onChange(of: inputValue, {
                 convertValue()
             })
+            .onChange(of: outputValue, {
+                updateInputValueFromOutput()
+            })
             .onChange(of: selectedInputConversionType, {
                 convertValue()
+            })
+            .onChange(of: selectedOutputConversionType, {
+                updateInputValueFromOutput()
             })
         }
     }
@@ -105,6 +111,15 @@ struct ContentView: View {
         switch selectedConversionType {
         case .length:
             outputValue = convertLength(inputValue: inputValue, inputUnit: selectedInputConversionType, outputUnit: selectedOutputConversionType)
+        default:
+            break
+        }
+    }
+    
+    private func updateInputValueFromOutput() {
+        switch selectedConversionType {
+        case .length:
+            inputValue = convertLength(inputValue: outputValue, inputUnit: selectedOutputConversionType, outputUnit: selectedInputConversionType)
         default:
             break
         }
