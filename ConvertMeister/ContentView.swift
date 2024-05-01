@@ -12,6 +12,7 @@ enum ConversionType: String, CaseIterable {
     case time = "Time"
     case temperature = "Temperature"
     case volume = "Volume"
+    case data = "Data"
 }
 
 protocol ConversionUnit {
@@ -146,6 +147,42 @@ enum VolumeUnit: String, CaseIterable {
     }
 }
 
+enum DataUnit: String, CaseIterable {
+    typealias UnitType = UnitInformationStorage
+    
+    case bits = "Bits"
+    case bytes = "Bytes"
+    case kilobytes = "Kilobytes"
+    case megabytes = "Megabytes"
+    case gigabytes = "Gigabytes"
+    case terabytes = "Terabytes"
+    
+    var unitName: String {
+        return self.rawValue
+    }
+    
+    var unitShortHand: String {
+        switch self {
+        case .bits: return "b"
+        case .bytes: return "B"
+        case .kilobytes: return "KB"
+        case .megabytes: return "MB"
+        case .gigabytes: return "GB"
+        case .terabytes: return "TB"
+        }
+    }
+    
+    var unit: UnitInformationStorage {
+        switch self {
+        case .bits: return .bits
+        case .bytes: return .bytes
+        case .kilobytes: return .kilobytes
+        case .megabytes: return .megabytes
+        case .gigabytes: return .gigabytes
+        case .terabytes: return .terabytes
+        }
+    }
+}
 
 struct ContentView: View {
     @State private var inputValue: Double = 0
@@ -163,6 +200,9 @@ struct ContentView: View {
     
     @State private var selectedVolumeInput = VolumeUnit.milliliters
     @State private var selectedVolumeOutput = VolumeUnit.liters
+    
+    @State private var selectedDataInput = DataUnit.bits
+    @State private var selectedDataOutput = DataUnit.bytes
     
     var body: some View {
         NavigationView {
@@ -216,32 +256,49 @@ struct ContentView: View {
                             }
                         }
                         .pickerStyle(.menu)
-
+                        
                         HStack {
                             TextField("Input Value", value: $inputValue, format: .number)
                                 .keyboardType(.decimalPad)
                                 .onAppear {
                                     inputValue = 0
                                 }
-
+                            
                             Text(selectedTemperatureInput.unitShortHand)
                         }
-                    } else {
+                    } else if selectedConversionType == .volume {
                         Picker("Input Unit:", selection: $selectedVolumeInput) {
                             ForEach(VolumeUnit.allCases, id: \.self) { volumeUnit in
                                 Text(volumeUnit.unitName)
                             }
                         }
                         .pickerStyle(.menu)
-
+                        
                         HStack {
                             TextField("Input Value", value: $inputValue, format: .number)
                                 .keyboardType(.decimalPad)
                                 .onAppear {
                                     inputValue = 0
                                 }
-
+                            
                             Text(selectedVolumeInput.unitShortHand)
+                        }
+                    } else {
+                        Picker("Input Unit:", selection: $selectedDataInput) {
+                            ForEach(DataUnit.allCases, id: \.self) { dataUnit in
+                                Text(dataUnit.unitName)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        
+                        HStack {
+                            TextField("Input Value", value: $inputValue, format: .number)
+                                .keyboardType(.decimalPad)
+                                .onAppear {
+                                    inputValue = 0
+                                }
+                            
+                            Text(selectedDataInput.unitShortHand)
                         }
                     }
                 }
@@ -288,32 +345,49 @@ struct ContentView: View {
                             }
                         }
                         .pickerStyle(.menu)
-
+                        
                         HStack {
                             TextField("Output Value", value: $outputValue, format: .number)
                                 .keyboardType(.decimalPad)
                                 .onAppear {
-                                    inputValue = 0
+                                    outputValue = 0
                                 }
-
+                            
                             Text(selectedTemperatureOutput.unitShortHand)
                         }
-                    } else {
+                    } else if selectedConversionType == .volume {
                         Picker("Output Unit:", selection: $selectedVolumeOutput) {
                             ForEach(VolumeUnit.allCases, id: \.self) { volumeUnit in
                                 Text(volumeUnit.unitName)
                             }
                         }
                         .pickerStyle(.menu)
-
+                        
                         HStack {
                             TextField("Output Value", value: $outputValue, format: .number)
                                 .keyboardType(.decimalPad)
                                 .onAppear {
-                                    inputValue = 0
+                                    outputValue = 0
                                 }
-
+                            
                             Text(selectedVolumeOutput.unitShortHand)
+                        }
+                    } else {
+                        Picker("Output Unit:", selection: $selectedDataOutput) {
+                            ForEach(DataUnit.allCases, id: \.self) { dataUnit in
+                                Text(dataUnit.unitName)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        
+                        HStack {
+                            TextField("Output Value", value: $outputValue, format: .number)
+                                .keyboardType(.decimalPad)
+                                .onAppear {
+                                    outputValue = 0
+                                }
+                            
+                            Text(selectedDataOutput.unitShortHand)
                         }
                     }
                 }
@@ -349,6 +423,12 @@ struct ContentView: View {
             .onChange(of: selectedVolumeOutput, {
                 convertValue()
             })
+            .onChange(of: selectedDataInput, {
+                updateInputValueFromOutput()
+            })
+            .onChange(of: selectedDataOutput, {
+                convertValue()
+            })
         }
     }
     
@@ -362,6 +442,8 @@ struct ContentView: View {
             outputValue = convertTemperature(inputValue: inputValue, inputUnit: selectedTemperatureInput, outputUnit: selectedTemperatureOutput)
         case .volume:
             outputValue = convertVolume(inputValue: inputValue, inputUnit: selectedVolumeInput, outputUnit: selectedVolumeOutput)
+        case .data:
+            outputValue = convertData(inputValue: inputValue, inputUnit: selectedDataInput, outputUnit: selectedDataOutput)
         }
     }
     
@@ -375,6 +457,8 @@ struct ContentView: View {
             inputValue = convertTemperature(inputValue: outputValue, inputUnit: selectedTemperatureOutput, outputUnit: selectedTemperatureInput)
         case .volume:
             inputValue = convertVolume(inputValue: outputValue, inputUnit: selectedVolumeOutput, outputUnit: selectedVolumeInput)
+        case .data:
+            inputValue = convertData(inputValue: outputValue, inputUnit: selectedDataOutput, outputUnit: selectedDataInput)
         }
     }
     
@@ -396,6 +480,11 @@ struct ContentView: View {
     private func convertVolume(inputValue: Double, inputUnit: VolumeUnit, outputUnit: VolumeUnit) -> Double {
         let baseVolume = Measurement(value: inputValue, unit: inputUnit.unit)
         return baseVolume.converted(to: outputUnit.unit).value
+    }
+    
+    func convertData(inputValue: Double, inputUnit: DataUnit, outputUnit: DataUnit) -> Double {
+        let baseData = Measurement(value: inputValue, unit: inputUnit.unit)
+        return baseData.converted(to: outputUnit.unit).value
     }
 }
 
