@@ -10,8 +10,8 @@ import SwiftUI
 enum ConversionType: String, CaseIterable {
     case length = "Length"
     case time = "Time"
-//    case temperature = "Temperature"
-//    case volume = "Volume"
+    case temperature = "Temperature"
+    case volume = "Volume"
 }
 
 protocol ConversionUnit {
@@ -84,6 +84,69 @@ enum TimeUnit: String, CaseIterable, ConversionUnit {
     }
 }
 
+enum TemperatureUnit: String, CaseIterable {
+    typealias UnitType = UnitTemperature
+    
+    case kelvin = "Kelvin"
+    case celsius = "Celsius"
+    case fahrenheit = "Fahrenheit"
+    
+    var unitName: String {
+        return self.rawValue
+    }
+    
+    var unitShortHand: String {
+        switch self {
+        case .kelvin: return "K"
+        case .celsius: return "°C"
+        case .fahrenheit: return "°F"
+        }
+    }
+    
+    var unit: UnitTemperature {
+        switch self {
+        case .kelvin: return .kelvin
+        case .celsius: return .celsius
+        case .fahrenheit: return .fahrenheit
+        }
+    }
+}
+
+enum VolumeUnit: String, CaseIterable {
+    typealias UnitType = UnitVolume
+    
+    case milliliters = "Milliliters"
+    case liters = "Liters"
+    case cups = "Cups"
+    case pints = "Pints"
+    case gallons = "Gallons"
+    
+    var unitName: String {
+        return self.rawValue
+    }
+    
+    var unitShortHand: String {
+        switch self {
+        case .milliliters: return "ml"
+        case .liters: return "l"
+        case .cups: return "cups"
+        case .pints: return "pints"
+        case .gallons: return "gal"
+        }
+    }
+    
+    var unit: UnitVolume {
+        switch self {
+        case .milliliters: return .milliliters
+        case .liters: return .liters
+        case .cups: return .cups
+        case .pints: return .pints
+        case .gallons: return .gallons
+        }
+    }
+}
+
+
 struct ContentView: View {
     @State private var inputValue: Double = 0
     @State private var outputValue: Double = 0
@@ -94,6 +157,12 @@ struct ContentView: View {
     
     @State private var selectedTimeInput = TimeUnit.seconds
     @State private var selectedTimeOutput = TimeUnit.minutes
+    
+    @State private var selectedTemperatureInput = TemperatureUnit.celsius
+    @State private var selectedTemperatureOutput = TemperatureUnit.fahrenheit
+    
+    @State private var selectedVolumeInput = VolumeUnit.milliliters
+    @State private var selectedVolumeOutput = VolumeUnit.liters
     
     var body: some View {
         NavigationView {
@@ -140,6 +209,40 @@ struct ContentView: View {
                             
                             Text(selectedTimeInput.unitShortHand)
                         }
+                    } else if selectedConversionType == .temperature {
+                        Picker("Input Unit:", selection: $selectedTemperatureInput) {
+                            ForEach(TemperatureUnit.allCases, id: \.self) { temperatureUnit in
+                                Text(temperatureUnit.unitName)
+                            }
+                        }
+                        .pickerStyle(.menu)
+
+                        HStack {
+                            TextField("Input Value", value: $inputValue, format: .number)
+                                .keyboardType(.decimalPad)
+                                .onAppear {
+                                    inputValue = 0
+                                }
+
+                            Text(selectedTemperatureInput.unitShortHand)
+                        }
+                    } else {
+                        Picker("Input Unit:", selection: $selectedVolumeInput) {
+                            ForEach(VolumeUnit.allCases, id: \.self) { volumeUnit in
+                                Text(volumeUnit.unitName)
+                            }
+                        }
+                        .pickerStyle(.menu)
+
+                        HStack {
+                            TextField("Input Value", value: $inputValue, format: .number)
+                                .keyboardType(.decimalPad)
+                                .onAppear {
+                                    inputValue = 0
+                                }
+
+                            Text(selectedVolumeInput.unitShortHand)
+                        }
                     }
                 }
                 
@@ -178,6 +281,40 @@ struct ContentView: View {
                             
                             Text(selectedTimeOutput.unitShortHand)
                         }
+                    } else if selectedConversionType == .temperature {
+                        Picker("Output Unit:", selection: $selectedTemperatureOutput) {
+                            ForEach(TemperatureUnit.allCases, id: \.self) { temperatureUnit in
+                                Text(temperatureUnit.unitName)
+                            }
+                        }
+                        .pickerStyle(.menu)
+
+                        HStack {
+                            TextField("Output Value", value: $outputValue, format: .number)
+                                .keyboardType(.decimalPad)
+                                .onAppear {
+                                    inputValue = 0
+                                }
+
+                            Text(selectedTemperatureOutput.unitShortHand)
+                        }
+                    } else {
+                        Picker("Output Unit:", selection: $selectedVolumeOutput) {
+                            ForEach(VolumeUnit.allCases, id: \.self) { volumeUnit in
+                                Text(volumeUnit.unitName)
+                            }
+                        }
+                        .pickerStyle(.menu)
+
+                        HStack {
+                            TextField("Output Value", value: $outputValue, format: .number)
+                                .keyboardType(.decimalPad)
+                                .onAppear {
+                                    inputValue = 0
+                                }
+
+                            Text(selectedVolumeOutput.unitShortHand)
+                        }
                     }
                 }
             }
@@ -200,6 +337,18 @@ struct ContentView: View {
             .onChange(of: selectedTimeOutput, {
                 convertValue()
             })
+            .onChange(of: selectedTemperatureInput, {
+                updateInputValueFromOutput()
+            })
+            .onChange(of: selectedTemperatureOutput, {
+                convertValue()
+            })
+            .onChange(of: selectedVolumeInput, {
+                updateInputValueFromOutput()
+            })
+            .onChange(of: selectedVolumeOutput, {
+                convertValue()
+            })
         }
     }
     
@@ -209,6 +358,10 @@ struct ContentView: View {
             outputValue = convertLength(inputValue: inputValue, inputUnit: selectedLengthInput, outputUnit: selectedLengthOutput)
         case .time:
             outputValue = convertTime(inputValue: inputValue, inputUnit: selectedTimeInput, outputUnit: selectedTimeOutput)
+        case .temperature:
+            outputValue = convertTemperature(inputValue: inputValue, inputUnit: selectedTemperatureInput, outputUnit: selectedTemperatureOutput)
+        case .volume:
+            outputValue = convertVolume(inputValue: inputValue, inputUnit: selectedVolumeInput, outputUnit: selectedVolumeOutput)
         }
     }
     
@@ -218,6 +371,10 @@ struct ContentView: View {
             inputValue = convertLength(inputValue: outputValue, inputUnit: selectedLengthOutput, outputUnit: selectedLengthInput)
         case .time:
             inputValue = convertTime(inputValue: outputValue, inputUnit: selectedTimeOutput, outputUnit: selectedTimeInput)
+        case .temperature:
+            inputValue = convertTemperature(inputValue: outputValue, inputUnit: selectedTemperatureOutput, outputUnit: selectedTemperatureInput)
+        case .volume:
+            inputValue = convertVolume(inputValue: outputValue, inputUnit: selectedVolumeOutput, outputUnit: selectedVolumeInput)
         }
     }
     
@@ -229,6 +386,16 @@ struct ContentView: View {
     private func convertTime(inputValue: Double, inputUnit: TimeUnit, outputUnit: TimeUnit) -> Double {
         let baseTime = Measurement(value: inputValue, unit: inputUnit.unit)
         return baseTime.converted(to: outputUnit.unit).value
+    }
+    
+    private func convertTemperature(inputValue: Double, inputUnit: TemperatureUnit, outputUnit: TemperatureUnit) -> Double {
+        let baseTemperature = Measurement(value: inputValue, unit: inputUnit.unit)
+        return baseTemperature.converted(to: outputUnit.unit).value
+    }
+    
+    private func convertVolume(inputValue: Double, inputUnit: VolumeUnit, outputUnit: VolumeUnit) -> Double {
+        let baseVolume = Measurement(value: inputValue, unit: inputUnit.unit)
+        return baseVolume.converted(to: outputUnit.unit).value
     }
 }
 
